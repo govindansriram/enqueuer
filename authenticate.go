@@ -11,6 +11,6 @@ func authenticate(w http.ResponseWriter, r *http.Request, validKey string) bool 
 		return true
 	}
 
-	NotAuthorizedHandler(w)
+	notAuthorizedHandler(w)
 	return false
 }

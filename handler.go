@@ -21,15 +21,13 @@ func checkEquality(fullPath, value string) bool {
 	return false
 }
 
-func successHandler(w http.ResponseWriter, response ...[]byte) {
+func successHandler(w http.ResponseWriter, response []byte) {
 	w.WriteHeader(http.StatusOK)
 
 	var err error
 
-	if len(response) > 0 {
-		_, err = w.Write(response[0])
-	} else {
-		_, err = w.Write([]byte("200 ok"))
+	if len(response) != 0 {
+		_, err = w.Write(response)
 	}
 
 	if err != nil {
@@ -37,29 +35,27 @@ func successHandler(w http.ResponseWriter, response ...[]byte) {
 	}
 }
 
-func serverErrorHandler(w http.ResponseWriter, err ...error) {
+func serverErrorHandler(w http.ResponseWriter, err error) {
 	w.WriteHeader(http.StatusInternalServerError)
 
-	if len(err) == 0 {
-		_, er := w.Write([]byte(err[0].Error()))
+	if err != nil {
+		_, er := w.Write([]byte(err.Error()))
 
 		if er != nil {
 			log.Println(err)
 		}
 	}
-
 }
 
-func NotAuthorizedHandler(w http.ResponseWriter) {
+func notAuthorizedHandler(w http.ResponseWriter) {
 	w.WriteHeader(http.StatusUnauthorized)
 	_, err := w.Write([]byte("401 status unauthorized"))
-
 	if err != nil {
 		log.Println(err)
 	}
 }
 
-func TooLargeHandler(w http.ResponseWriter) {
+func tooLargeHandler(w http.ResponseWriter) {
 	w.WriteHeader(http.StatusRequestEntityTooLarge)
 	_, err := w.Write([]byte("413 queue cannot store a message this large"))
 
@@ -71,7 +67,6 @@ func TooLargeHandler(w http.ResponseWriter) {
 func getLengthByteMap(lg int) ([]byte, error) {
 	m := make(map[string]int, 1)
 	m["length"] = lg
-
 	return json.Marshal(m)
 }
 
@@ -93,7 +88,7 @@ func length(w http.ResponseWriter) {
 }
 
 func ping(w http.ResponseWriter) {
-	successHandler(w)
+	successHandler(w, nil)
 }
 
 func enqueue(w http.ResponseWriter, r *http.Request) {
@@ -108,7 +103,7 @@ func enqueue(w http.ResponseWriter, r *http.Request) {
 	lg, err := d.Push(bodyBytes)
 
 	if err != nil && err.Error() == "message exceeds acceptable message size" {
-		TooLargeHandler(w)
+		tooLargeHandler(w)
 		return
 	}
 
