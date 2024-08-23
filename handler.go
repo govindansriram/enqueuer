@@ -8,8 +8,15 @@ import (
 	"strings"
 )
 
+type Publisher interface {
+	Len() (int, error)
+	Close()
+	Push(mess []byte) (int, error)
+}
+
 type enqueueHandler struct {
-	key string
+	key    string
+	driver Publisher
 }
 
 func checkEquality(fullPath, value string) bool {
@@ -70,9 +77,8 @@ func getLengthByteMap(lg int) ([]byte, error) {
 	return json.Marshal(m)
 }
 
-func length(w http.ResponseWriter) {
-	d := getDriver()
-	lg, err := d.Len()
+func length(w http.ResponseWriter, driver Publisher) {
+	lg, err := driver.Len()
 
 	if err != nil {
 		serverErrorHandler(w, err)
@@ -91,16 +97,14 @@ func ping(w http.ResponseWriter) {
 	successHandler(w, nil)
 }
 
-func enqueue(w http.ResponseWriter, r *http.Request) {
-	d := getDriver()
-
+func enqueue(w http.ResponseWriter, r *http.Request, driver Publisher) {
 	bodyBytes, err := io.ReadAll(r.Body)
 
 	if err != nil {
 		serverErrorHandler(w, err)
 	}
 
-	lg, err := d.Push(bodyBytes)
+	lg, err := driver.Push(bodyBytes)
 
 	if err != nil && err.Error() == "message exceeds acceptable message size" {
 		tooLargeHandler(w)
@@ -135,12 +139,13 @@ func (h enqueueHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		ping(w)
 		return
 	case r.Method == http.MethodGet && comparePaths("len"):
-		length(w)
+		length(w, h.driver)
 		return
 	case r.Method == http.MethodPost && comparePaths("enqueue"):
-		enqueue(w, r)
+		enqueue(w, r, h.driver)
 		return
 	default:
+		w.WriteHeader(404)
 		return
 	}
 }

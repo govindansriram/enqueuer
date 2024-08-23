@@ -8,8 +8,6 @@ import (
 	"os"
 )
 
-var driver qldriver.PublisherClient
-
 type config struct {
 	Name             string `yaml:"name"`
 	Password         string `yaml:"password"`
@@ -36,10 +34,6 @@ func readConfig(fileData []byte) (qldriver.PublisherClient, error) {
 		structure.Address)
 }
 
-func getDriver() qldriver.PublisherClient {
-	return driver
-}
-
 func main() {
 
 	fPath := os.Args[1]
@@ -55,7 +49,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	driver = qDriver
+	driver := qDriver
 
 	apiKey := os.Getenv("APIKEY")
 
@@ -64,7 +58,8 @@ func main() {
 	}
 
 	handler := enqueueHandler{
-		key: apiKey,
+		key:    apiKey,
+		driver: driver,
 	}
 
 	mux := http.NewServeMux()
