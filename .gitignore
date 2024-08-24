@@ -1,1 +1,8 @@
 .idea
+config.yaml
+configs/config.yaml
+test.sh
+enqueuer
+compose.yaml
+configs
+deploy.sh
